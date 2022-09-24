@@ -279,3 +279,11 @@ This implementation was a simple key-value store but illustrates how it is done.
       nil
       (read-string res))))
 #+end_src
+
+* Exceptions
+#+begin_src clojure
+  (try
+    (do-something)
+    (catch Exception e
+      (handle-error)))
+#+end_src

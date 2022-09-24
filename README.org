@@ -1,0 +1,111 @@
+#+TITLE: Clojure Cookbook
+
+* Keybindings
+
+** Emacs REPL and Eval
+
+| Command                      | Keybinding  |
+|------------------------------|-------------|
+| start repl                   | `C-c M-j`   |
+| switch namespace (from file) | `C-c M-n n` |
+| eval top level               | `C-c C-c`   |
+| eval defun                   | `C-M-x`     |
+| eval last                    | `C-c C-e`   |
+| eval buffer                  | `C-c C-k`   |
+| lookup clojure docs          | `C-c C-d c` |
+| toggle repl once open        | `C-c C-z`   |
+| close repl connect           | `C-c C-q`   |
+| run loaded tests             | `C-c C-t l` |
+| run all tests                | `C-c C-t p` |
+
+** Paredit
+
+| Command                           | Keybinding |
+|-----------------------------------|------------|
+| forward sexp                      | `C-M-f`    |
+| backward sexp                     | `C-M-b`    |
+| into sexp forward (down into)     | `C-M-d`    |
+| out sexp backward (back out)      | `C-M-u`    |
+| into sexp backward (back into)    | `C-M-p`    |
+| out sexp forward (up out)         | `C-M-n`    |
+| delete sexp forward (with parens) | `C-k`      |
+| slurp forward                     | `C-)`      |
+| barf forward                      | `C-}`      |
+| slurp backward                    | `C-(`      |
+| barf backward                     | `C-{`      |
+
+** Debugger
+
+| Command                                 | Keybinding  |
+|-----------------------------------------|-------------|
+| instrument function                     | `C-u C-M-x` |
+| next step                               | `n`         |
+| step into                               | `i`         |
+| step out                                | `o`         |
+| eval code in current context            | `e`         |
+| inspect current value                   | `p`         |
+| inspect arbitrary expression            | `P`         |
+| inspect locals                          | `l`         |
+| toggle locals display                   | `L`         |
+| show stack                              | `s`         |
+| quit                                    | `q`         |
+| here (place cursor and execute to point | `h`         |
+
+* Deps.edn
+
+Create a file called ~deps.edn~ in a project. The file will contain a map.
+
+#+begin_src clojure
+{}
+#+end_src
+
+Add your source paths.
+
+#+begin_src clojure
+{:paths ["src/cookbook"]}
+#+end_src
+
+Then add some dependencies. Dependencies can be git or maven repos.
+
+#+begin_src clojure
+{:paths ["src/cookbook"]
+ :deps {org.clojure/clojure {:mvn/version "1.10.1"}}}
+#+end_src
+
+Define test paths and dependencies which will not get built into the source
+jar. You can also specify the uberjar for packaging. These are defined as
+aliases in the deps file.
+
+#+begin_src clojure
+{:paths ["src/cookbook"]
+ :deps {org.clojure/clojure {:mvn/version "1.10.1"}}
+ :aliases {:test {:extra-paths ["test/cookbook"]
+                  :extra-deps  {lambdaisland/kaocha {:mvn/version "0.0-529"}}
+                  :main-opts   ["-m" "kaocha.runner"]}
+           :uberjar {:extra-deps {uberdeps {:mvn/version "0.1.4"}}
+                     :main-opts  ["-m" "uberdeps.uberjar" "--target" "target/cdeps-0.1.0.jar"]}}}
+#+end_src
+
+Running the aliases is done as such:
+
+#+begin_src
+clj -A test
+#+end_src
+
+#+begin_src
+clj -A uberjar
+#+end_src
+
+* Pretty printing
+
+#+begin_src clojure
+(:require [clojure.pprint :as pp])
+
+(pp/pprint {:hello "there"})
+#+end_src
+
+pretty print to file:
+
+#+begin_src clojure
+(spit "file.edn" (with-out-str (pp/pprint {:hola "buenos dias"})))
+#+end_src

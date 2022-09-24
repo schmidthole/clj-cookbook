@@ -217,3 +217,16 @@ decent overview of websocket usage.
       [json-content]
       (json/read-str json-content :key-fn keyword))
 #+end_src
+
+* Base64
+
+#+begin_src clojure
+(:require [clojure.data.codec.base64 :as b64])
+
+(defn- base64->bytes
+  "convert a base64 string into a bytes object."
+  [b64str]
+  (-> b64str
+      (.getBytes "UTF-8")
+      (b64/decode)))
+#+end_src

@@ -1,5 +1,8 @@
 #+TITLE: Clojure Cookbook
 
+Quick references for things I commonly do in Clojure including keybindings,
+project setup, and code snippets.
+
 * Keybindings
 
 ** Emacs REPL and Eval
@@ -108,4 +111,18 @@ pretty print to file:
 
 #+begin_src clojure
 (spit "file.edn" (with-out-str (pp/pprint {:hola "buenos dias"})))
+#+end_src
+
+* Easy File Reading/Writing
+
+Write pretty printed edn to a file:
+
+#+begin_src clojure
+(spit "file.edn" (with-out-str (pp/pprint {:hola "buenos dias"})))
+#+end_src
+
+Read edn from a file:
+
+#+begin_src clojure
+(read-string (slurp "file.edn"))
 #+end_src

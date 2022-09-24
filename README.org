@@ -219,7 +219,6 @@ decent overview of websocket usage.
 #+end_src
 
 * Base64
-
 #+begin_src clojure
 (:require [clojure.data.codec.base64 :as b64])
 
@@ -229,4 +228,54 @@ decent overview of websocket usage.
   (-> b64str
       (.getBytes "UTF-8")
       (b64/decode)))
+#+end_src
+
+* Logging
+This has not worked great, but is a basic logger
+
+#+begin_src clojure
+(:require [clojure.tools.logging :as log])
+
+(log/info msg)
+#+end_src
+
+* Database
+Simple SQLite database connection example
+
+** Dependencies
+#+begin_src clojure
+;; lein deps but can easily be converted to deps.edn
+[com.github.seancorfield/next.jdbc "1.2.761"]
+[org.xerial/sqlite-jdbc "3.36.0.3"]
+#+end_src
+
+** Implementation
+This implementation was a simple key-value store but illustrates how it is done.
+
+#+begin_src clojure
+(:require [next.jdbc :as jdbc])
+(:require [next.jdbc.plan :as plan])
+
+(defn open [db-str]
+  (let [db-spec {:jdbcUrl db-str}
+        ds (jdbc/get-datasource db-spec)]
+    (jdbc/execute! ds ["CREATE TABLE IF NOT EXISTS kvstore(
+                          skey TEXT PRIMARY KEY,
+                          namespace TEXT,
+                          value BLOB);"])
+    ds))
+
+(defn write-value [ds key namespace value]
+  (jdbc/execute! ds
+                 ["INSERT OR REPLACE INTO kvstore VALUES(?, ?, ?);"
+                  key
+                  namespace
+                  (pr-str value)]))
+
+(defn read-value [ds key]
+  (let [res (plan/select-one! ds :value ["SELECT value FROM kvstore WHERE skey=?;"
+                                         key])]
+    (if (nil? res)
+      nil
+      (read-string res))))
 #+end_src

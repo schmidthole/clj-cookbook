@@ -4,9 +4,7 @@ Quick references for things I commonly do in Clojure including keybindings,
 project setup, and code snippets.
 
 * Keybindings
-
 ** Emacs REPL and Eval
-
 | Command                      | Keybinding  |
 |------------------------------|-------------|
 | start repl                   | `C-c M-j`   |
@@ -22,7 +20,6 @@ project setup, and code snippets.
 | run all tests                | `C-c C-t p` |
 
 ** Paredit
-
 | Command                           | Keybinding |
 |-----------------------------------|------------|
 | forward sexp                      | `C-M-f`    |
@@ -38,7 +35,6 @@ project setup, and code snippets.
 | barf backward                     | `C-{`      |
 
 ** Debugger
-
 | Command                                 | Keybinding  |
 |-----------------------------------------|-------------|
 | instrument function                     | `C-u C-M-x` |
@@ -53,9 +49,7 @@ project setup, and code snippets.
 | show stack                              | `s`         |
 | quit                                    | `q`         |
 | here (place cursor and execute to point | `h`         |
-
 * Deps.edn
-
 Create a file called ~deps.edn~ in a project. The file will contain a map.
 
 #+begin_src clojure
@@ -100,7 +94,6 @@ clj -A uberjar
 #+end_src
 
 * Pretty printing
-
 #+begin_src clojure
 (:require [clojure.pprint :as pp])
 
@@ -114,7 +107,6 @@ pretty print to file:
 #+end_src
 
 * Easy File Reading/Writing
-
 Write pretty printed edn to a file:
 
 #+begin_src clojure
@@ -125,4 +117,103 @@ Read edn from a file:
 
 #+begin_src clojure
 (read-string (slurp "file.edn"))
+#+end_src
+
+* HTTP Client
+Functions for interacting with APIs using JSON payloads:
+
+#+begin_src clojure
+(:require [clj-http.client :as client])
+
+(defn api-get []
+  (let [rsp (client/get "https://url.test"
+                        {:headers {"Authorization" "hello"}
+                         :cookie-policy :standard
+                         :accept :json
+                         :as :json})]
+    (get-in rsp [:body])))
+
+(defn api-post [path body]
+  (let [rsp (client/post "https://url.test"
+                         {:headers {"Authorization" "hello"}
+                          :form-params {:field "1" :other 2}
+                          :accept :json
+                          :as :json
+                          :content-type :json})]
+    (get-in rsp [:body])))
+#+end_src
+
+* Websockets
+The snippet below is taken directly from a project, but gives a
+decent overview of websocket usage.
+
+#+begin_src clojure
+(:require [gniazdo.core :as ws])
+
+(defn- create-socket-on-receive
+  [user-on-receive]
+  (if (nil? user-on-receive)
+    (constantly nil)
+    (fn [msg]
+      (-> msg
+          utils/json->edn
+          user-on-receive))))
+
+(defn- create-socket-on-binary
+  [user-on-receive]
+  (if (nil? user-on-receive)
+    (constantly nil)
+    (fn [binary-msg offset len]
+      (->> binary-msg
+           ;; (drop offset)
+           ;; (take len)
+           String.
+           utils/json->edn
+           user-on-receive))))
+
+(defn- get-socket-connection
+  [opts]
+  (ws/connect
+      (:url opts)
+    :on-connect (or (:on-connect opts) (constantly nil))
+    :on-receive (create-socket-on-receive (:on-receive opts))
+    :on-binary (create-socket-on-binary (:on-receive opts))
+    :on-close (or (:on-close opts) (constantly nil))
+    :on-error (or (:on-error opts) (constantly nil))))
+
+(defn send-websocket-authenticate [connection]
+  (->> {:action "authenticate"
+        :data {:key_id api-key
+               :secret_key secret}}
+       utils/edn->json
+       (ws/send-msg connection)))
+
+(defn send-websocket-listen [connection]
+  (->> {:action "listen"
+        :data {:streams ["updates"]}}
+       utils/edn->json
+       (ws/send-msg connection)))
+
+(defn create-websocket-connection [opts]
+  (let [connection (get-socket-connection opts)]
+    (send-websocket-authenticate connection)
+    (send-websocket-listen connection)
+    connection))
+
+(defn close-websocket-connection
+  [connection]
+  (ws/close connection))
+#+end_src
+
+* JSON <-> EDN
+#+begin_src clojure
+  (:require [clojure.data.json :as json])
+
+  (defn edn->json
+    [edn-content]
+      (json/write-str edn-content))
+
+    (defn json->edn
+      [json-content]
+      (json/read-str json-content :key-fn keyword))
 #+end_src

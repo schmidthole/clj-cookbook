@@ -280,6 +280,67 @@ This implementation was a simple key-value store but illustrates how it is done.
       (read-string res))))
 #+end_src
 
+** HoneySQL
+
+HoneySQL is a library for creating and formatting sql statements using sexp. It makes
+it very easy to construct statements. Below is an example of using it for a article
+link storage system:
+
+#+begin_src clojure
+(:require [honey.sql :as sql]
+          [honey.sql.helpers :refer [select
+                                     from
+                                       where
+                                       limit
+                                       insert-into
+                                       columns
+                                       values
+                                       create-table
+                                       with-columns]])
+
+;;
+;; CREATE TABLE IF NOT EXISTS articles(
+;;     id INT AUTO_INCREMENT PRIMARY KEY,
+;;     source VARCHAR(255) NOT NULL,
+;;     timestamp INT NOT NULL,
+;;     title VARCHAR(1024),
+;;     link VARCHAR(2048));
+;;
+(defn create-articles-table []
+  (-> (create-table :articles :if-not-exists)
+      (with-columns [[:id :int :auto-increment :primary-key]
+                     [:source [:varchar 255] [:not nil]]
+                     [:timestamp :int [:not nil]]
+                     [:title [:varchar 1024]]
+                     [:link [:varchar 2048]]])
+      (sql/format)))
+
+
+;;
+;; INSERT INTO articles(id, source, timestamp, title, link)
+;; VALUES (?, ?, ?, ?, ?);
+;;
+(defn insert-article [source title link]
+  (let [now (quot (System/currentTimeMillis) 1000)]
+    (-> (insert-into :articles)
+        (columns :source :timestamp :title :link)
+        (values [[source now title link]])
+        (sql/format))))
+
+;;
+;; SELECT * FROM articles
+;; WHERE source=?
+;; ORDER BY date DESC
+;; LIMIT 20;
+;;
+(defn select-by-source [source num-articles]
+  (-> (select :*)
+      (from :articles)
+      (where [:= :source source])
+      (limit num-articles)
+      (sql/format)))
+#+end_src
+
 * Exceptions
 #+begin_src clojure
   (try
